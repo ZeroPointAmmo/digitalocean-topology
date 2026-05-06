@@ -1,0 +1,129 @@
+/* Theme tokens. The default :root values are the dark theme; the
+   [data-theme="light"] block overrides them for light mode. Toggling
+   data-theme on the <html> element switches the entire UI. */
+
+:root {
+  /* Surfaces */
+  --bg-canvas: #0d1117;
+  --bg-app: #0e1116;
+  --bg-surface-1: #161b22;
+  --bg-surface-2: #1f2937;
+  --bg-overlay: rgba(13, 17, 23, 0.6);
+  --bg-legend: rgba(13, 17, 23, 0.9);
+
+  /* Borders */
+  --border-default: #30363d;
+  --border-strong: #6e7681;
+  --border-accent: #1f6feb;
+
+  /* Text */
+  --text-primary: #e6edf3;
+  --text-secondary: #c9d1d9;
+  --text-muted: #8b949e;
+  --text-faint: #6e7681;
+
+  /* Accents */
+  --accent-blue: #58a6ff;
+  --accent-blue-soft: #79c0ff;
+  --accent-blue-bg: #16223d;
+  --accent-green: #238636;
+  --accent-green-hover: #2ea043;
+  --accent-green-text: #56d364;
+  --accent-yellow: #d29922;
+  --accent-red: #da3633;
+  --accent-red-soft: #ff7b72;
+  --accent-red-strong: #ff5454;
+  --accent-red-bg: #2d1416;
+  --accent-red-border: #6e2225;
+
+  /* Status pills */
+  --status-success-bg: #1f6feb;
+  --status-success-fg: #ffffff;
+  --status-partial-bg: #d29922;
+  --status-partial-fg: #1c1c1c;
+  --status-error-bg: #da3633;
+  --status-error-fg: #ffffff;
+  --status-fetching-bg: #6e7681;
+  --status-fetching-fg: #ffffff;
+  --status-pending-bg: #30363d;
+  --status-pending-fg: #c9d1d9;
+
+  /* Cytoscape canvas */
+  --cy-bg-from: #161b22;
+  --cy-bg-to: #0d1117;
+  --cy-text-outline: #0d1117;
+  --cy-node-border: #0d1117;
+  --cy-edge: #30363d;
+  --cy-edge-firewall: #f85149;
+  --cy-edge-lb: #ffa657;
+  --cy-edge-volume: #56d364;
+  --cy-edge-dns: #bc8cff;
+
+  /* Tag chips */
+  --chip-bg: #1f2937;
+  --chip-border: #30363d;
+  --chip-text: #79c0ff;
+}
+
+:root[data-theme="light"] {
+  /* Surfaces */
+  --bg-canvas: #ffffff;
+  --bg-app: #f6f8fa;
+  --bg-surface-1: #f6f8fa;
+  --bg-surface-2: #eaeef2;
+  --bg-overlay: rgba(255, 255, 255, 0.7);
+  --bg-legend: rgba(255, 255, 255, 0.95);
+
+  /* Borders */
+  --border-default: #d0d7de;
+  --border-strong: #afb8c1;
+  --border-accent: #0969da;
+
+  /* Text */
+  --text-primary: #1f2328;
+  --text-secondary: #424a53;
+  --text-muted: #6e7781;
+  --text-faint: #8c959f;
+
+  /* Accents */
+  --accent-blue: #0969da;
+  --accent-blue-soft: #218bff;
+  --accent-blue-bg: #ddf4ff;
+  --accent-green: #1a7f37;
+  --accent-green-hover: #1f883d;
+  --accent-green-text: #1a7f37;
+  --accent-yellow: #9a6700;
+  --accent-red: #cf222e;
+  --accent-red-soft: #cf222e;
+  --accent-red-strong: #d1242f;
+  --accent-red-bg: #ffebe9;
+  --accent-red-border: #ffabaa;
+
+  /* Status pills */
+  --status-success-bg: #1f883d;
+  --status-success-fg: #ffffff;
+  --status-partial-bg: #bf8700;
+  --status-partial-fg: #ffffff;
+  --status-error-bg: #cf222e;
+  --status-error-fg: #ffffff;
+  --status-fetching-bg: #6e7781;
+  --status-fetching-fg: #ffffff;
+  --status-pending-bg: #d0d7de;
+  --status-pending-fg: #424a53;
+
+  /* Cytoscape canvas */
+  --cy-bg-from: #ffffff;
+  --cy-bg-to: #f6f8fa;
+  --cy-text-outline: #ffffff;
+  --cy-node-border: #ffffff;
+  --cy-edge: #afb8c1;
+  --cy-edge-firewall: #cf222e;
+  --cy-edge-lb: #bc4c00;
+  --cy-edge-volume: #1a7f37;
+  --cy-edge-dns: #8250df;
+
+  /* Tag chips */
+  --chip-bg: #ddf4ff;
+  --chip-border: #54aeff66;
+  --chip-text: #0969da;
+}

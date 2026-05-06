@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>DigitalOcean Topology</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="/static/theme.css" />
+<link rel="stylesheet" href="/static/styles.css" />
+<script>
+  // Apply saved theme as early as possible (before first paint) to avoid a flash.
+  (function () {
+    try {
+      var saved = localStorage.getItem('do-topology.theme');
+      var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
+<script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>DO Topology</h1>
+  <div class="status">
+    <span id="status-pill" class="pill pending">idle</span>
+    <span id="last-fetched" class="muted">never fetched</span>
+    <button id="flagged-chip" class="flagged-chip" hidden type="button" title="Flagged for deletion (click to focus the first one)">
+      <span id="flagged-count">0</span> flagged
+    </button>
+  </div>
+  <div class="controls">
+    <input id="search" type="search" placeholder="Search by name or IP" />
+    <select id="layout-select" title="Layout">
+      <option value="cose">force-directed</option>
+      <option value="grid">grid</option>
+      <option value="concentric">concentric</option>
+      <option value="breadthfirst">breadth-first</option>
+    </select>
+    <button id="theme-toggle" class="theme-toggle" type="button" title="Switch theme">Light mode</button>
+    <button id="settings-open" class="theme-toggle" type="button" title="API token & settings">Settings</button>
+    <button id="refresh" title="Re-fetch from DigitalOcean">Refresh</button>
+  </div>
+</header>
+
+<div id="isolation-banner" hidden>
+  <span class="banner-label">Isolated:</span>
+  <strong id="isolation-name"></strong>
+  <span class="banner-meta" id="isolation-meta"></span>
+  <button id="isolation-clear" type="button">show all</button>
+</div>
+
+<main>
+  <div id="cy"></div>
+  <aside id="details">
+    <div id="details-empty" class="muted">Click a node to see what it's connected to.</div>
+    <div id="details-content" hidden></div>
+  </aside>
+</main>
+
+<div id="legend">
+  <div id="legend-header">
+    <span>Filter by type</span>
+    <button id="legend-reset" type="button" title="Show all types">reset</button>
+  </div>
+  <div id="legend-rows">
+    <button class="legend-row" data-type="droplet"><span class="dot t-droplet"></span><span class="legend-label">droplet</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="db"><span class="dot t-db"></span><span class="legend-label">database</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="vpc"><span class="dot t-vpc"></span><span class="legend-label">vpc</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="firewall"><span class="dot t-firewall"></span><span class="legend-label">firewall</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="lb"><span class="dot t-lb"></span><span class="legend-label">load balancer</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="reserved_ip"><span class="dot t-reserved_ip"></span><span class="legend-label">reserved IP</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="volume"><span class="dot t-volume"></span><span class="legend-label">volume</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="snapshot"><span class="dot t-snapshot"></span><span class="legend-label">snapshot</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="domain"><span class="dot t-domain"></span><span class="legend-label">domain</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="record"><span class="dot t-record"></span><span class="legend-label">dns record</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="k8s"><span class="dot t-k8s"></span><span class="legend-label">k8s</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="app"><span class="dot t-app"></span><span class="legend-label">app</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="function_ns"><span class="dot t-function_ns"></span><span class="legend-label">functions</span><span class="legend-count"></span></button>
+    <button class="legend-row" data-type="registry"><span class="dot t-registry"></span><span class="legend-label">registry</span><span class="legend-count"></span></button>
+  </div>
+</div>
+
+<div id="overlay" hidden><div class="spinner"></div><div id="overlay-text">Fetching…</div></div>
+
+<div id="settings-modal" class="modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-card" role="dialog" aria-labelledby="settings-title" aria-modal="true">
+    <div class="modal-header">
+      <h2 id="settings-title">Settings</h2>
+      <button id="settings-close" class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <section>
+        <h3>DigitalOcean API token</h3>
+        <p class="modal-help">
+          The token is stored locally in <code>data/topology.db</code> on this machine.
+          It's only used by this app to query the DigitalOcean API. Read scope is sufficient.
+          <a href="https://cloud.digitalocean.com/account/api/tokens" target="_blank" rel="noopener">
+            Generate a token →
+          </a>
+        </p>
+        <div id="token-status" class="token-status muted">Checking…</div>
+        <div class="token-input-row">
+          <input
+            id="token-input"
+            type="password"
+            placeholder="dop_v1_..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="token-show" type="button" class="token-show" title="Show / hide">show</button>
+        </div>
+        <div class="modal-actions">
+          <button id="token-save" type="button" class="btn-primary">Save &amp; test</button>
+          <button id="token-clear" type="button" class="btn-danger" hidden>Clear stored token</button>
+          <span id="token-feedback" class="save-status"></span>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

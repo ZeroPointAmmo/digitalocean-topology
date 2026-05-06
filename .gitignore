@@ -1,0 +1,8 @@
+.env
+data/topology.db
+data/topology.db-*
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.DS_Store

@@ -1,0 +1,91 @@
+{
+  "droplets": [
+    {
+      "id": 100,
+      "name": "web-1",
+      "status": "active",
+      "size": {"slug": "s-1vcpu-1gb", "memory": 1024, "vcpus": 1, "disk": 25},
+      "region": {"slug": "nyc3"},
+      "vpc_uuid": "vpc-aaa",
+      "tags": ["web"],
+      "networks": {
+        "v4": [
+          {"type": "public", "ip_address": "203.0.113.10"},
+          {"type": "private", "ip_address": "10.0.0.10"}
+        ]
+      }
+    },
+    {
+      "id": 101,
+      "name": "web-2",
+      "status": "active",
+      "size": {"slug": "s-1vcpu-1gb", "memory": 1024, "vcpus": 1, "disk": 25},
+      "region": {"slug": "nyc3"},
+      "vpc_uuid": "vpc-aaa",
+      "tags": ["web"],
+      "networks": {
+        "v4": [
+          {"type": "public", "ip_address": "203.0.113.11"},
+          {"type": "private", "ip_address": "10.0.0.11"}
+        ]
+      }
+    }
+  ],
+  "databases": [
+    {
+      "id": "db-uuid-1",
+      "name": "primary-pg",
+      "engine": "pg",
+      "size": "db-s-1vcpu-1gb",
+      "num_nodes": 1,
+      "region": "nyc3",
+      "private_network_uuid": "vpc-aaa",
+      "_disk_capacity_gb": 10
+    }
+  ],
+  "domains": [
+    {
+      "name": "example.com",
+      "_records": [
+        {"id": 1, "name": "@", "type": "A", "data": "203.0.113.10", "ttl": 300},
+        {"id": 2, "name": "lb", "type": "A", "data": "198.51.100.5", "ttl": 300},
+        {"id": 3, "name": "www", "type": "CNAME", "data": "example.com.", "ttl": 300}
+      ]
+    }
+  ],
+  "networking": {
+    "vpcs": [
+      {"id": "vpc-aaa", "name": "default-nyc3", "region": "nyc3", "ip_range": "10.0.0.0/16"}
+    ],
+    "firewalls": [
+      {"id": "fw-1", "name": "web-fw", "droplet_ids": [100, 101]}
+    ],
+    "load_balancers": [
+      {
+        "id": "lb-1",
+        "name": "web-lb",
+        "ip": "198.51.100.5",
+        "droplet_ids": [100, 101],
+        "region": {"slug": "nyc3"},
+        "vpc_uuid": "vpc-aaa"
+      }
+    ],
+    "reserved_ips": [
+      {"ip": "203.0.113.20", "droplet": {"id": 100}, "region": {"slug": "nyc3"}}
+    ]
+  },
+  "storage": {
+    "volumes": [
+      {"id": "vol-1", "name": "data-vol", "size_gigabytes": 50, "region": {"slug": "nyc3"}, "droplet_ids": [100]}
+    ],
+    "snapshots": [
+      {"id": "snap-1", "name": "weekly-backup", "size_gigabytes": 20, "resource_type": "droplet", "resource_id": 100}
+    ]
+  },
+  "compute_extras": {
+    "kubernetes_clusters": [],
+    "apps": [],
+    "functions_namespaces": [],
+    "registry": null
+  }
+}
