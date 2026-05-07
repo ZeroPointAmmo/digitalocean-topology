@@ -39,7 +39,7 @@ That's it. The graph populates after a few seconds.
 
 - **Backend:** Python 3.12, FastAPI, httpx (async DO API client)
 - **Storage:** SQLite (`./data/topology.db`, host-mounted, persists across restarts)
-- **Frontend:** static HTML/CSS/JS + Cytoscape.js (no build step, no npm)
+- **Frontend:** static HTML/CSS/JS + locally vendored Cytoscape.js (no build step, no npm)
 - **Container:** single image via `docker compose`
 
 ## Configuration
@@ -99,7 +99,8 @@ Restart the container: `docker compose restart`.
 │   ├── index.html
 │   ├── theme.css         # light/dark color tokens
 │   ├── styles.css
-│   └── app.js
+│   ├── app.js
+│   └── vendor/           # local browser assets such as Cytoscape.js
 ├── data/topology.db      # SQLite (host-mounted, gitignored)
 ├── tests/
 ├── Dockerfile
@@ -138,7 +139,7 @@ Copy that one file to back up the entire app state.
 
 ## Security notes
 
-- The app runs **on localhost only** (`0.0.0.0:8000` exposed via Docker, not externally routable unless you change `docker-compose.yml`).
+- The app runs **on localhost only** (`127.0.0.1:8000` exposed via Docker, not externally routable unless you change `docker-compose.yml`).
 - The DO API token is stored **plaintext** in `data/topology.db`. Same security profile as `.env` — it's a local file on your machine. Don't commit `data/topology.db` (it's gitignored by default).
 - The app **only reads** from the DigitalOcean API. There are no `POST` / `PUT` / `DELETE` calls to DO.
 - "Flag for deletion" is purely a local marker. It never deletes anything from your account.

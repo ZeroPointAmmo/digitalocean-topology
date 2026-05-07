@@ -18,50 +18,114 @@
     }
   })();
 </script>
-<script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="/static/vendor/cytoscape.min.js"></script>
 </head>
 <body>
-<header>
-  <h1>DO Topology</h1>
-  <div class="status">
+<header class="app-header">
+  <div class="brand-block">
+    <span class="brand-mark" data-icon="network"></span>
+    <div>
+      <h1>DO Topology</h1>
+      <span>Infrastructure map</span>
+    </div>
+  </div>
+
+  <div class="status-strip">
     <span id="status-pill" class="pill pending">idle</span>
     <span id="last-fetched" class="muted">never fetched</span>
-    <button id="flagged-chip" class="flagged-chip" hidden type="button" title="Flagged for deletion (click to focus the first one)">
-      <span id="flagged-count">0</span> flagged
+    <button id="snapshot-mode" class="state-chip history" hidden type="button" title="Return to latest snapshot">
+      <span data-icon="history"></span>
+      <span>historical</span>
+    </button>
+    <button id="flagged-chip" class="state-chip flagged" hidden type="button" title="Flagged for deletion">
+      <span data-icon="flag"></span>
+      <span id="flagged-count">0</span>
+      <span>flagged</span>
     </button>
   </div>
-  <div class="controls">
-    <input id="search" type="search" placeholder="Search by name or IP" />
-    <select id="layout-select" title="Layout">
-      <option value="cose">force-directed</option>
-      <option value="grid">grid</option>
-      <option value="concentric">concentric</option>
-      <option value="breadthfirst">breadth-first</option>
-    </select>
-    <button id="theme-toggle" class="theme-toggle" type="button" title="Switch theme">Light mode</button>
-    <button id="settings-open" class="theme-toggle" type="button" title="API token & settings">Settings</button>
-    <button id="refresh" title="Re-fetch from DigitalOcean">Refresh</button>
+
+  <div class="command-bar" aria-label="Topology controls">
+    <label class="search-shell">
+      <span data-icon="search"></span>
+      <input id="search" type="search" placeholder="Search resources, IPs, tags" />
+    </label>
+
+    <label class="select-shell">
+      <span data-icon="layout"></span>
+      <select id="layout-select" title="Layout">
+        <option value="cose">force</option>
+        <option value="grid">grid</option>
+        <option value="concentric">rings</option>
+        <option value="breadthfirst">flow</option>
+      </select>
+    </label>
+
+    <div class="command-cluster">
+      <button id="history-open" class="icon-command" type="button" title="Snapshot history">
+        <span data-icon="history"></span>
+        <span>History</span>
+      </button>
+      <button id="theme-toggle" class="icon-command" type="button" title="Switch theme">
+        <span data-icon="sun"></span>
+        <span>Light</span>
+      </button>
+      <button id="settings-open" class="icon-command" type="button" title="Settings">
+        <span data-icon="settings"></span>
+        <span>Settings</span>
+      </button>
+      <button id="refresh" class="icon-command primary" type="button" title="Re-fetch from DigitalOcean">
+        <span data-icon="refresh"></span>
+        <span>Refresh</span>
+      </button>
+    </div>
   </div>
 </header>
 
 <div id="isolation-banner" hidden>
-  <span class="banner-label">Isolated:</span>
+  <span class="banner-label">Isolated</span>
   <strong id="isolation-name"></strong>
   <span class="banner-meta" id="isolation-meta"></span>
-  <button id="isolation-clear" type="button">show all</button>
+  <button id="isolation-clear" type="button">
+    <span data-icon="x"></span>
+    <span>show all</span>
+  </button>
 </div>
 
 <main>
-  <div id="cy"></div>
-  <aside id="details">
-    <div id="details-empty" class="muted">Click a node to see what it's connected to.</div>
+  <section class="graph-stage" aria-label="Topology graph">
+    <div id="cy"></div>
+    <div id="graph-toolbar" aria-label="Graph tools">
+      <button id="fit-view" class="tool-button" type="button" title="Fit visible graph">
+        <span data-icon="maximize"></span>
+      </button>
+      <button id="reset-layout" class="tool-button" type="button" title="Re-run layout">
+        <span data-icon="layout"></span>
+      </button>
+      <button id="zoom-in" class="tool-button" type="button" title="Zoom in">
+        <span data-icon="plus"></span>
+      </button>
+      <button id="zoom-out" class="tool-button" type="button" title="Zoom out">
+        <span data-icon="minus"></span>
+      </button>
+      <button id="clear-isolation-toolbar" class="tool-button" type="button" disabled title="Clear isolation">
+        <span data-icon="focus"></span>
+      </button>
+      <span id="visible-count" class="toolbar-count">0 visible</span>
+    </div>
+  </section>
+
+  <aside id="details" class="inspector" aria-label="Resource inspector">
+    <div id="details-empty" class="empty-state">
+      <span data-icon="mouse-pointer"></span>
+      <strong>Select a resource</strong>
+    </div>
     <div id="details-content" hidden></div>
   </aside>
 </main>
 
 <div id="legend">
   <div id="legend-header">
-    <span>Filter by type</span>
+    <span>Resource types</span>
     <button id="legend-reset" type="button" title="Show all types">reset</button>
   </div>
   <div id="legend-rows">
@@ -82,26 +146,63 @@
   </div>
 </div>
 
-<div id="overlay" hidden><div class="spinner"></div><div id="overlay-text">Fetching…</div></div>
+<div id="overlay" hidden><div class="spinner"></div><div id="overlay-text">Fetching...</div></div>
+
+<div id="history-drawer" class="drawer" hidden>
+  <div class="drawer-backdrop" data-close-history></div>
+  <aside class="drawer-panel" aria-labelledby="history-title" aria-modal="true" role="dialog">
+    <div class="drawer-header">
+      <div>
+        <span class="eyebrow">Snapshots</span>
+        <h2 id="history-title">History</h2>
+      </div>
+      <button id="history-close" class="modal-close" type="button" data-close-history aria-label="Close">
+        <span data-icon="x"></span>
+      </button>
+    </div>
+    <div id="history-list" class="history-list"></div>
+  </aside>
+</div>
 
 <div id="settings-modal" class="modal" hidden>
   <div class="modal-backdrop" data-close-modal></div>
   <div class="modal-card" role="dialog" aria-labelledby="settings-title" aria-modal="true">
     <div class="modal-header">
-      <h2 id="settings-title">Settings</h2>
-      <button id="settings-close" class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+      <div>
+        <span class="eyebrow">Control room</span>
+        <h2 id="settings-title">Settings</h2>
+      </div>
+      <button id="settings-close" class="modal-close" type="button" data-close-modal aria-label="Close">
+        <span data-icon="x"></span>
+      </button>
     </div>
+
+    <div class="settings-tabs" role="tablist">
+      <button class="settings-tab active" type="button" data-settings-tab="token">
+        <span data-icon="key"></span>
+        <span>API token</span>
+      </button>
+      <button class="settings-tab" type="button" data-settings-tab="appearance">
+        <span data-icon="palette"></span>
+        <span>Appearance</span>
+      </button>
+      <button class="settings-tab" type="button" data-settings-tab="trust">
+        <span data-icon="shield"></span>
+        <span>Trust</span>
+      </button>
+    </div>
+
     <div class="modal-body">
-      <section>
+      <section class="settings-panel" data-settings-panel="token">
         <h3>DigitalOcean API token</h3>
         <p class="modal-help">
           The token is stored locally in <code>data/topology.db</code> on this machine.
-          It's only used by this app to query the DigitalOcean API. Read scope is sufficient.
+          It is only used by this app to query the DigitalOcean API. Read scope is sufficient.
           <a href="https://cloud.digitalocean.com/account/api/tokens" target="_blank" rel="noopener">
-            Generate a token →
+            Generate a token
           </a>
         </p>
-        <div id="token-status" class="token-status muted">Checking…</div>
+        <div id="token-status" class="token-status muted">Checking...</div>
         <div class="token-input-row">
           <input
             id="token-input"
@@ -116,6 +217,30 @@
           <button id="token-save" type="button" class="btn-primary">Save &amp; test</button>
           <button id="token-clear" type="button" class="btn-danger" hidden>Clear stored token</button>
           <span id="token-feedback" class="save-status"></span>
+        </div>
+      </section>
+
+      <section class="settings-panel" data-settings-panel="appearance" hidden>
+        <h3>Appearance</h3>
+        <p class="modal-help">Theme is saved in this browser only.</p>
+        <div class="theme-choice-row">
+          <button type="button" data-theme-choice="dark">
+            <span data-icon="moon"></span>
+            <span>Dark</span>
+          </button>
+          <button type="button" data-theme-choice="light">
+            <span data-icon="sun"></span>
+            <span>Light</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="settings-panel" data-settings-panel="trust" hidden>
+        <h3>Local security</h3>
+        <div class="trust-list">
+          <div><span data-icon="shield"></span><span>Docker binds to <code>127.0.0.1:8000</code> by default.</span></div>
+          <div><span data-icon="package"></span><span>Cytoscape is served from <code>/static/vendor</code>, not a runtime CDN.</span></div>
+          <div><span data-icon="lock"></span><span>The app never sends write requests to DigitalOcean.</span></div>
         </div>
       </section>
     </div>

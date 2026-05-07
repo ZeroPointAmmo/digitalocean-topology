@@ -42,9 +42,16 @@ def snapshot_latest() -> dict[str, Any]:
     snap = db.get_latest_snapshot(s.db_path)
     if snap is None:
         return {"snapshot": None, "graph": {"nodes": [], "edges": []}}
-    graph = topology.build_graph(snap["payload"])
-    meta = {k: v for k, v in snap.items() if k != "payload"}
-    return {"snapshot": meta, "graph": graph, "raw": snap["payload"]}
+    return _snapshot_response(snap)
+
+
+@router.get("/api/snapshots/{snapshot_id}")
+def snapshot_get(snapshot_id: int) -> dict[str, Any]:
+    s = get_settings()
+    snap = db.get_snapshot(s.db_path, snapshot_id)
+    if snap is None:
+        raise HTTPException(status_code=404, detail="Snapshot not found")
+    return _snapshot_response(snap)
 
 
 @router.post("/api/refresh")
@@ -174,3 +181,9 @@ def _format_errors(errors: dict[str, str]) -> str:
     if not errors:
         return ""
     return "; ".join(f"{k}: {v}" for k, v in errors.items())
+
+
+def _snapshot_response(snap: dict[str, Any]) -> dict[str, Any]:
+    graph = topology.build_graph(snap["payload"])
+    meta = {k: v for k, v in snap.items() if k != "payload"}
+    return {"snapshot": meta, "graph": graph, "raw": snap["payload"]}

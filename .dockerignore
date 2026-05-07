@@ -9,4 +9,3 @@ __pycache__
 data/topology.db
 data/topology.db-*
 README.md
-tests/

@@ -82,6 +82,18 @@ def get_latest_snapshot(db_path: Path) -> dict[str, Any] | None:
     return _row_to_snapshot(row)
 
 
+def get_snapshot(db_path: Path, snapshot_id: int) -> dict[str, Any] | None:
+    with _connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT id, fetched_at, status, error_message, duration_ms, payload_json "
+            "FROM snapshots WHERE id = ?",
+            (snapshot_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    return _row_to_snapshot(row)
+
+
 def list_snapshot_meta(db_path: Path, limit: int = 50) -> list[dict[str, Any]]:
     with _connect(db_path) as conn:
         rows = conn.execute(

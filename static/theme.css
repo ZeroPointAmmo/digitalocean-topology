@@ -1,129 +1,136 @@
-/* Theme tokens. The default :root values are the dark theme; the
-   [data-theme="light"] block overrides them for light mode. Toggling
-   data-theme on the <html> element switches the entire UI. */
+/* Theme tokens. Default values are the dark control-room theme; the
+   light theme overrides them on the html element. */
 
 :root {
-  /* Surfaces */
-  --bg-canvas: #0d1117;
-  --bg-app: #0e1116;
-  --bg-surface-1: #161b22;
-  --bg-surface-2: #1f2937;
-  --bg-overlay: rgba(13, 17, 23, 0.6);
-  --bg-legend: rgba(13, 17, 23, 0.9);
+  color-scheme: dark;
 
-  /* Borders */
-  --border-default: #30363d;
-  --border-strong: #6e7681;
-  --border-accent: #1f6feb;
+  --bg-app: #111312;
+  --bg-canvas: #0b0d0c;
+  --bg-surface-1: #171a18;
+  --bg-surface-2: #202420;
+  --bg-surface-3: #2a302b;
+  --bg-overlay: rgba(8, 10, 9, 0.72);
+  --bg-legend: rgba(18, 21, 19, 0.92);
+  --bg-elevated: rgba(23, 26, 24, 0.96);
 
-  /* Text */
-  --text-primary: #e6edf3;
-  --text-secondary: #c9d1d9;
-  --text-muted: #8b949e;
-  --text-faint: #6e7681;
+  --border-default: #303832;
+  --border-strong: #58645d;
+  --border-soft: #222923;
+  --border-accent: #2f8f83;
 
-  /* Accents */
-  --accent-blue: #58a6ff;
-  --accent-blue-soft: #79c0ff;
-  --accent-blue-bg: #16223d;
-  --accent-green: #238636;
-  --accent-green-hover: #2ea043;
-  --accent-green-text: #56d364;
-  --accent-yellow: #d29922;
-  --accent-red: #da3633;
-  --accent-red-soft: #ff7b72;
-  --accent-red-strong: #ff5454;
-  --accent-red-bg: #2d1416;
-  --accent-red-border: #6e2225;
+  --text-primary: #eef2ed;
+  --text-secondary: #c6cec8;
+  --text-muted: #8d9a91;
+  --text-faint: #68746d;
 
-  /* Status pills */
-  --status-success-bg: #1f6feb;
-  --status-success-fg: #ffffff;
-  --status-partial-bg: #d29922;
-  --status-partial-fg: #1c1c1c;
-  --status-error-bg: #da3633;
-  --status-error-fg: #ffffff;
-  --status-fetching-bg: #6e7681;
-  --status-fetching-fg: #ffffff;
-  --status-pending-bg: #30363d;
-  --status-pending-fg: #c9d1d9;
+  --accent-blue: #63b3ff;
+  --accent-blue-soft: #9bd0ff;
+  --accent-blue-bg: #102033;
+  --accent-green: #2e9d67;
+  --accent-green-hover: #38b879;
+  --accent-green-text: #71d69d;
+  --accent-teal: #35c2b3;
+  --accent-yellow: #d99a2b;
+  --accent-red: #ee5d5d;
+  --accent-red-soft: #ff8a80;
+  --accent-red-bg: #321818;
+  --accent-red-border: #7d3432;
+  --accent-violet: #b794f6;
+  --accent-orange: #f59e57;
 
-  /* Cytoscape canvas */
-  --cy-bg-from: #161b22;
-  --cy-bg-to: #0d1117;
-  --cy-text-outline: #0d1117;
-  --cy-node-border: #0d1117;
-  --cy-edge: #30363d;
-  --cy-edge-firewall: #f85149;
-  --cy-edge-lb: #ffa657;
-  --cy-edge-volume: #56d364;
-  --cy-edge-dns: #bc8cff;
+  --status-success-bg: #174c34;
+  --status-success-fg: #9df0bd;
+  --status-partial-bg: #493817;
+  --status-partial-fg: #ffd486;
+  --status-error-bg: #4d1f20;
+  --status-error-fg: #ffaaa3;
+  --status-fetching-bg: #223b47;
+  --status-fetching-fg: #a9dffc;
+  --status-pending-bg: #293029;
+  --status-pending-fg: #c6cec8;
 
-  /* Tag chips */
-  --chip-bg: #1f2937;
-  --chip-border: #30363d;
-  --chip-text: #79c0ff;
+  --cy-bg-from: #151815;
+  --cy-bg-mid: #111312;
+  --cy-bg-to: #090b0a;
+  --cy-text-outline: #090b0a;
+  --cy-node-border: rgba(255, 255, 255, 0.28);
+  --cy-edge: #39413a;
+  --cy-edge-firewall: #ee5d5d;
+  --cy-edge-lb: #f59e57;
+  --cy-edge-volume: #55c87f;
+  --cy-edge-dns: #b794f6;
+
+  --chip-bg: #1f2923;
+  --chip-border: #304138;
+  --chip-text: #9bd0ff;
+
+  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.34);
+  --shadow-tight: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
 :root[data-theme="light"] {
-  /* Surfaces */
+  color-scheme: light;
+
+  --bg-app: #f5f7f5;
   --bg-canvas: #ffffff;
-  --bg-app: #f6f8fa;
-  --bg-surface-1: #f6f8fa;
-  --bg-surface-2: #eaeef2;
-  --bg-overlay: rgba(255, 255, 255, 0.7);
+  --bg-surface-1: #ffffff;
+  --bg-surface-2: #eef2ef;
+  --bg-surface-3: #e3e9e5;
+  --bg-overlay: rgba(245, 247, 245, 0.78);
   --bg-legend: rgba(255, 255, 255, 0.95);
+  --bg-elevated: rgba(255, 255, 255, 0.98);
 
-  /* Borders */
-  --border-default: #d0d7de;
-  --border-strong: #afb8c1;
-  --border-accent: #0969da;
+  --border-default: #d5ddd8;
+  --border-strong: #a7b4ad;
+  --border-soft: #e8eeea;
+  --border-accent: #13857b;
 
-  /* Text */
-  --text-primary: #1f2328;
-  --text-secondary: #424a53;
-  --text-muted: #6e7781;
-  --text-faint: #8c959f;
+  --text-primary: #1f2622;
+  --text-secondary: #455149;
+  --text-muted: #6d7b72;
+  --text-faint: #98a49c;
 
-  /* Accents */
   --accent-blue: #0969da;
   --accent-blue-soft: #218bff;
-  --accent-blue-bg: #ddf4ff;
-  --accent-green: #1a7f37;
-  --accent-green-hover: #1f883d;
+  --accent-blue-bg: #e8f3ff;
+  --accent-green: #1f883d;
+  --accent-green-hover: #2da44e;
   --accent-green-text: #1a7f37;
+  --accent-teal: #008f86;
   --accent-yellow: #9a6700;
   --accent-red: #cf222e;
   --accent-red-soft: #cf222e;
-  --accent-red-strong: #d1242f;
   --accent-red-bg: #ffebe9;
-  --accent-red-border: #ffabaa;
+  --accent-red-border: #ffb8b0;
+  --accent-violet: #8250df;
+  --accent-orange: #bc4c00;
 
-  /* Status pills */
-  --status-success-bg: #1f883d;
-  --status-success-fg: #ffffff;
-  --status-partial-bg: #bf8700;
-  --status-partial-fg: #ffffff;
-  --status-error-bg: #cf222e;
-  --status-error-fg: #ffffff;
-  --status-fetching-bg: #6e7781;
-  --status-fetching-fg: #ffffff;
-  --status-pending-bg: #d0d7de;
-  --status-pending-fg: #424a53;
+  --status-success-bg: #dafbe1;
+  --status-success-fg: #116329;
+  --status-partial-bg: #fff8c5;
+  --status-partial-fg: #7d4e00;
+  --status-error-bg: #ffebe9;
+  --status-error-fg: #a40e26;
+  --status-fetching-bg: #ddf4ff;
+  --status-fetching-fg: #0969da;
+  --status-pending-bg: #eaeef2;
+  --status-pending-fg: #57606a;
 
-  /* Cytoscape canvas */
   --cy-bg-from: #ffffff;
-  --cy-bg-to: #f6f8fa;
+  --cy-bg-mid: #f7faf8;
+  --cy-bg-to: #edf3ef;
   --cy-text-outline: #ffffff;
-  --cy-node-border: #ffffff;
-  --cy-edge: #afb8c1;
+  --cy-node-border: rgba(31, 38, 34, 0.2);
+  --cy-edge: #a8b2ab;
   --cy-edge-firewall: #cf222e;
   --cy-edge-lb: #bc4c00;
   --cy-edge-volume: #1a7f37;
   --cy-edge-dns: #8250df;
 
-  /* Tag chips */
-  --chip-bg: #ddf4ff;
-  --chip-border: #54aeff66;
+  --chip-bg: #e8f3ff;
+  --chip-border: #b6d7ff;
   --chip-text: #0969da;
+
+  --shadow-soft: 0 18px 45px rgba(31, 38, 34, 0.14);
+  --shadow-tight: 0 10px 24px rgba(31, 38, 34, 0.1);
 }
