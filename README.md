@@ -2,6 +2,8 @@
 
 A local, self-hosted web app that maps your DigitalOcean infrastructure as an interactive topology graph — droplets, managed databases (with read-only replicas), DNS records, networking (VPCs, firewalls, load balancers, reserved IPs), storage (volumes, snapshots), and compute extras (Kubernetes, App Platform, Functions, Container Registry). Click any node to see its connections; add notes; flag resources for deletion; switch between light and dark themes.
 
+Manage **multiple DigitalOcean accounts** in one app — each gets its own token, snapshot history, and notes. Switch from the header chip; only one account is active at a time.
+
 Everything runs in a single Docker container on your machine. The DigitalOcean API token never leaves your laptop.
 
 ## Features
@@ -10,7 +12,8 @@ Everything runs in a single Docker container on your machine. The DigitalOcean A
 - **Click any node** to see all its connections grouped by relationship (VPC, firewalls, load balancers, DNS, volumes, snapshots, etc.)
 - **Isolation mode** — focus on a single node and only its direct connections
 - **Filter by type** via the legend (click any resource type to hide / show)
-- **Per-node notes** — freeform text saved locally per resource
+- **Multiple DigitalOcean accounts** — name each one, switch in a click; per-account snapshot history and notes
+- **Per-node notes** — freeform text saved locally per resource (scoped to the active account)
 - **Flag for deletion** — mark resources for cleanup; flagged nodes get a red outline
 - **Search** by name, IP, tag, role, region
 - **Snapshot history** — every refresh is stored in SQLite so you can browse past states
@@ -28,10 +31,13 @@ Everything runs in a single Docker container on your machine. The DigitalOcean A
 
 2. **Open the app:** <http://localhost:8000>
 
-3. **Paste your DigitalOcean API token** when prompted in the Settings panel.
+3. **Add your first DigitalOcean account** when prompted in the Settings → Accounts panel.
+   - Give it a name (e.g. "Personal", "Work") and paste the token
    - Generate a token at <https://cloud.digitalocean.com/account/api/tokens>
    - Read scope is sufficient — this app never writes to your account
-   - The token is validated against `/v2/account` before saving
+   - The token is validated against `/v2/account` before saving; the account's UUID and email are captured so you can verify which DO account you're looking at
+
+To add more accounts later, open Settings → Accounts and click **Add account**. Switch between them via the chip in the header.
 
 That's it. The graph populates after a few seconds.
 
@@ -44,21 +50,19 @@ That's it. The graph populates after a few seconds.
 
 ## Configuration
 
-The DigitalOcean API token can be configured two ways. **Either works**; the in-app setting takes precedence over the environment variable.
+Accounts are managed entirely in the UI: open **Settings → Accounts** to add, edit, switch, or delete an account. Each row shows the account name, DO email (captured from `/v2/account` at validation time), token hint, and Spaces status. The chip in the app header is the quick switcher.
 
-### Option A — Settings panel (recommended)
+### Migration from older versions
 
-Click **Settings** in the header, paste the token, click **Save & test**. Stored in `data/topology.db`.
+If you're upgrading a `data/topology.db` from before multi-account support:
 
-### Option B — Environment variable
+- The legacy `DO_TOKEN` row in the `settings` table or `DO_TOKEN` from `.env` is imported into a seeded "Account 1" (or "from .env") on first start.
+- Existing snapshots and notes are reattributed to that account automatically.
+- After migration, the env vars `DO_TOKEN`, `SPACES_KEY`, `SPACES_SECRET`, `SPACES_REGION` are no longer consulted — manage everything via the Accounts panel.
 
-Edit `.env` in the project root:
+### Spaces credentials
 
-```
-DO_TOKEN=dop_v1_your_token_here
-```
-
-Restart the container: `docker compose restart`.
+Spaces is per-account: open the account's edit form to add `spaces_key`, `spaces_secret`, and `spaces_region`. If you previously had Spaces creds in `.env`, they're copied into the seeded account during migration.
 
 ## Resource coverage
 
@@ -80,7 +84,7 @@ Restart the container: `docker compose restart`.
 | Container Registry | `/v2/registry` | |
 
 **Caveats:**
-- **Spaces buckets** require S3-compatible auth (separate Spaces access keys). If `SPACES_KEY` / `SPACES_SECRET` are set in `.env` they'll be picked up; otherwise Spaces is skipped.
+- **Spaces buckets** require S3-compatible auth (separate Spaces access keys). Configure them per-account in Settings → Accounts → Edit → Spaces credentials.
 - **Real-time database disk usage** is not in the standard DO API. The app shows provisioned capacity from `storage_size_mib`.
 
 ## Folder structure
@@ -101,8 +105,8 @@ Restart the container: `docker compose restart`.
 │   ├── styles.css
 │   ├── app.js
 │   └── vendor/           # local browser assets such as Cytoscape.js
-├── data/topology.db      # SQLite (host-mounted, gitignored)
-├── tests/
+├── data/topology.db      # SQLite — accounts, snapshots, notes (host-mounted, gitignored)
+├── tests/                # pytest: routes, topology graph, v1->v2 migration
 ├── Dockerfile
 ├── docker-compose.yml
 └── .env.example
@@ -123,24 +127,23 @@ docker compose logs -f
 # Run tests
 docker compose run --rm topology pytest tests/
 
-# Inspect snapshot history
-sqlite3 data/topology.db "SELECT id, fetched_at, status, duration_ms FROM snapshots ORDER BY id DESC LIMIT 10;"
+# Inspect snapshot history (per account)
+sqlite3 data/topology.db "SELECT s.id, a.name AS account, s.fetched_at, s.status, s.duration_ms FROM snapshots s JOIN accounts a ON a.id=s.account_id ORDER BY s.id DESC LIMIT 10;"
 ```
 
 ## Backup
 
 Everything you care about lives in `data/topology.db`:
-- Snapshot history
-- Per-node notes
-- Flagged resources
-- Saved DO API token
+- Account list (names, tokens, optional Spaces credentials, captured DO email/UUID)
+- Per-account snapshot history
+- Per-account notes and flagged resources
 
 Copy that one file to back up the entire app state.
 
 ## Security notes
 
 - The app runs **on localhost only** (`127.0.0.1:8000` exposed via Docker, not externally routable unless you change `docker-compose.yml`).
-- The DO API token is stored **plaintext** in `data/topology.db`. Same security profile as `.env` — it's a local file on your machine. Don't commit `data/topology.db` (it's gitignored by default).
+- DO API tokens are stored **plaintext** in `data/topology.db` (one per account). Same security profile as `.env` — it's a local file on your machine. Don't commit `data/topology.db` (it's gitignored by default).
 - The app **only reads** from the DigitalOcean API. There are no `POST` / `PUT` / `DELETE` calls to DO.
 - "Flag for deletion" is purely a local marker. It never deletes anything from your account.
 

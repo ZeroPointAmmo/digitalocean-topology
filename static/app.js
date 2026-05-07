@@ -30,6 +30,11 @@ const ICONS = {
   sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.9 4.9 1.4 1.4"></path><path d="m17.7 17.7 1.4 1.4"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m4.9 19.1 1.4-1.4"></path><path d="m17.7 6.3 1.4-1.4"></path>',
   tag: '<path d="M20.6 13.1 13.1 20.6a2 2 0 0 1-2.8 0L3 13.3V3h10.3l7.3 7.3a2 2 0 0 1 0 2.8z"></path><path d="M7.5 7.5h.01"></path>',
   x: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>',
+  'chevron-down': '<path d="m6 9 6 6 6-6"></path>',
+  pencil: '<path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"></path>',
+  trash: '<path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6 18 20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path>',
+  check: '<path d="M20 6 9 17l-5-5"></path>',
 };
 
 const RESOURCE_META = {
@@ -87,12 +92,22 @@ const els = {
   settingsOpen: document.getElementById('settings-open'),
   settingsModal: document.getElementById('settings-modal'),
   settingsClose: document.getElementById('settings-close'),
-  tokenStatus: document.getElementById('token-status'),
-  tokenInput: document.getElementById('token-input'),
-  tokenShow: document.getElementById('token-show'),
-  tokenSave: document.getElementById('token-save'),
-  tokenClear: document.getElementById('token-clear'),
-  tokenFeedback: document.getElementById('token-feedback'),
+  accountsList: document.getElementById('accounts-list'),
+  accountsBanner: document.getElementById('accounts-banner'),
+  newAccountName: document.getElementById('new-account-name'),
+  newAccountToken: document.getElementById('new-account-token'),
+  newAccountSpacesKey: document.getElementById('new-account-spaces-key'),
+  newAccountSpacesSecret: document.getElementById('new-account-spaces-secret'),
+  newAccountSpacesRegion: document.getElementById('new-account-spaces-region'),
+  newAccountSave: document.getElementById('new-account-save'),
+  newAccountFeedback: document.getElementById('new-account-feedback'),
+  addAccount: document.getElementById('add-account'),
+  accountSwitcherWrap: document.getElementById('account-switcher-wrap'),
+  accountSwitcher: document.getElementById('account-switcher'),
+  accountSwitcherName: document.getElementById('account-switcher-name'),
+  accountMenu: document.getElementById('account-menu'),
+  accountMenuList: document.getElementById('account-menu-list'),
+  accountMenuManage: document.getElementById('account-menu-manage'),
   fitView: document.getElementById('fit-view'),
   resetLayout: document.getElementById('reset-layout'),
   zoomIn: document.getElementById('zoom-in'),
@@ -106,6 +121,8 @@ const els = {
 };
 
 let cachedSettings = null;
+let accountsCache = [];
+let activeAccountId = null;
 let currentSnapshot = null;
 let viewingHistorical = false;
 let isolatedNodeId = null;
@@ -891,40 +908,367 @@ function updateIsolationBanner() {
   els.isolationMeta.textContent = `${node.data('type_label') || node.data('type')} - ${neighbors} direct connection${neighbors === 1 ? '' : 's'}`;
 }
 
-async function fetchSettings() {
-  const res = await fetch('/api/settings');
-  if (!res.ok) throw new Error(`GET /api/settings -> ${res.status}`);
-  cachedSettings = await res.json();
-  renderTokenStatus(cachedSettings);
+async function fetchAccounts() {
+  const res = await fetch('/api/accounts');
+  if (!res.ok) throw new Error(`GET /api/accounts -> ${res.status}`);
+  const data = await res.json();
+  accountsCache = data.accounts || [];
+  activeAccountId = data.active_account_id ?? null;
+  cachedSettings = {
+    accounts_count: accountsCache.length,
+    active_account_id: activeAccountId,
+  };
+  renderAccountSwitcher();
+  renderAccountsList();
   return cachedSettings;
 }
 
-function renderTokenStatus(s) {
-  if (!s.token_configured) {
-    els.tokenStatus.className = 'token-status missing';
-    els.tokenStatus.textContent = 'No token configured.';
-    els.tokenClear.hidden = true;
-  } else {
-    const sourceLabel = s.source === 'env' ? 'from .env (DO_TOKEN)' : 'saved in this app';
-    els.tokenStatus.className = 'token-status configured';
-    els.tokenStatus.textContent = `Token configured (${sourceLabel}) ending in ****${s.token_hint}.`;
-    els.tokenClear.hidden = s.source !== 'db';
+function renderAccountSwitcher() {
+  if (!accountsCache.length) {
+    els.accountSwitcherWrap.hidden = true;
+    els.accountMenu.hidden = true;
+    return;
+  }
+  els.accountSwitcherWrap.hidden = false;
+  const active = accountsCache.find((a) => a.is_active);
+  els.accountSwitcherName.textContent = active ? active.name : 'No active account';
+  els.accountMenuList.replaceChildren();
+  accountsCache.forEach((a) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'account-menu-item';
+    btn.classList.toggle('active', a.is_active);
+    const left = document.createElement('span');
+    left.className = 'account-menu-item-name';
+    left.textContent = a.name;
+    const right = document.createElement('span');
+    right.className = 'account-menu-item-meta muted';
+    right.textContent = a.do_account_email || 'no email';
+    btn.append(left, right);
+    btn.addEventListener('click', async () => {
+      els.accountMenu.hidden = true;
+      if (a.is_active) return;
+      await activateAccount(a.id);
+    });
+    els.accountMenuList.appendChild(btn);
+  });
+}
+
+function renderAccountsList() {
+  els.accountsList.replaceChildren();
+  if (!accountsCache.length) {
+    const empty = document.createElement('div');
+    empty.className = 'accounts-empty muted';
+    empty.textContent = 'No accounts yet. Add your first DigitalOcean token below.';
+    els.accountsList.appendChild(empty);
+    return;
+  }
+  accountsCache.forEach((a) => els.accountsList.appendChild(buildAccountRow(a)));
+}
+
+function buildAccountRow(a) {
+  const row = document.createElement('div');
+  row.className = 'account-row';
+  row.classList.toggle('active', a.is_active);
+  row.dataset.accountId = a.id;
+
+  const info = document.createElement('div');
+  info.className = 'account-row-info';
+  const name = document.createElement('strong');
+  name.className = 'account-row-name';
+  name.textContent = a.name;
+  info.appendChild(name);
+  if (a.is_active) {
+    const badge = document.createElement('span');
+    badge.className = 'account-row-active-badge';
+    badge.textContent = 'active';
+    info.appendChild(badge);
+  }
+  const meta = document.createElement('div');
+  meta.className = 'account-row-meta muted';
+  const parts = [];
+  if (a.do_account_email) parts.push(a.do_account_email);
+  parts.push(a.token_hint ? `token …${a.token_hint}` : 'no token');
+  if (a.spaces_configured) parts.push('spaces');
+  meta.textContent = parts.join(' · ');
+  info.appendChild(meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'account-row-actions';
+  if (!a.is_active) {
+    const activate = document.createElement('button');
+    activate.type = 'button';
+    activate.className = 'btn-ghost';
+    activate.textContent = 'Activate';
+    activate.addEventListener('click', () => activateAccount(a.id));
+    actions.appendChild(activate);
+  }
+  const edit = document.createElement('button');
+  edit.type = 'button';
+  edit.className = 'icon-btn';
+  edit.title = 'Edit';
+  edit.append(iconEl('pencil'));
+  edit.addEventListener('click', () => toggleEditRow(a));
+  actions.appendChild(edit);
+  const del = document.createElement('button');
+  del.type = 'button';
+  del.className = 'icon-btn danger';
+  del.title = 'Delete';
+  del.append(iconEl('trash'));
+  del.addEventListener('click', () => deleteAccountConfirm(a));
+  actions.appendChild(del);
+
+  const top = document.createElement('div');
+  top.className = 'account-row-top';
+  top.append(info, actions);
+  row.appendChild(top);
+  return row;
+}
+
+function toggleEditRow(a) {
+  const row = els.accountsList.querySelector(`.account-row[data-account-id="${a.id}"]`);
+  if (!row) return;
+  const existing = row.querySelector('.account-row-edit');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+  const form = document.createElement('div');
+  form.className = 'account-row-edit';
+
+  const mkRow = (labelText, input) => {
+    const wrap = document.createElement('label');
+    wrap.className = 'form-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'form-label';
+    lbl.textContent = labelText;
+    wrap.append(lbl, input);
+    return wrap;
+  };
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.value = a.name;
+  nameInput.maxLength = 200;
+  const tokenInput = document.createElement('input');
+  tokenInput.type = 'password';
+  tokenInput.placeholder = 'leave blank to keep current';
+  tokenInput.maxLength = 200;
+  tokenInput.autocomplete = 'off';
+  tokenInput.spellcheck = false;
+  const spacesKey = document.createElement('input');
+  spacesKey.type = 'text';
+  spacesKey.autocomplete = 'off';
+  spacesKey.value = '';
+  spacesKey.placeholder = 'spaces key';
+  const spacesSecret = document.createElement('input');
+  spacesSecret.type = 'password';
+  spacesSecret.autocomplete = 'off';
+  spacesSecret.placeholder = 'spaces secret';
+  const spacesRegion = document.createElement('input');
+  spacesRegion.type = 'text';
+  spacesRegion.placeholder = 'spaces region (e.g. nyc3)';
+
+  form.appendChild(mkRow('Name', nameInput));
+  form.appendChild(mkRow('New token', tokenInput));
+  const spacesDetails = document.createElement('details');
+  spacesDetails.className = 'add-account-spaces';
+  const summary = document.createElement('summary');
+  summary.textContent = 'Update Spaces credentials';
+  spacesDetails.appendChild(summary);
+  spacesDetails.appendChild(mkRow('Spaces key', spacesKey));
+  spacesDetails.appendChild(mkRow('Spaces secret', spacesSecret));
+  spacesDetails.appendChild(mkRow('Spaces region', spacesRegion));
+  form.appendChild(spacesDetails);
+
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const save = document.createElement('button');
+  save.type = 'button';
+  save.className = 'btn-primary';
+  save.textContent = 'Save';
+  const feedback = document.createElement('span');
+  feedback.className = 'save-status';
+  actions.append(save, feedback);
+  form.appendChild(actions);
+
+  save.addEventListener('click', async () => {
+    save.disabled = true;
+    feedback.className = 'save-status saving';
+    feedback.textContent = 'saving...';
+    try {
+      const body = {};
+      const newName = nameInput.value.trim();
+      if (newName && newName !== a.name) body.name = newName;
+      if (tokenInput.value.trim()) body.token = tokenInput.value.trim();
+      if (spacesDetails.open) {
+        body.spaces_key = spacesKey.value.trim() || null;
+        body.spaces_secret = spacesSecret.value.trim() || null;
+        body.spaces_region = spacesRegion.value.trim() || null;
+      }
+      if (!Object.keys(body).length) {
+        feedback.className = 'save-status';
+        feedback.textContent = 'nothing to update';
+        return;
+      }
+      await updateAccount(a.id, body);
+      feedback.className = 'save-status saved';
+      feedback.textContent = 'saved';
+      setTimeout(() => {
+        form.remove();
+      }, 400);
+    } catch (e) {
+      feedback.className = 'save-status error';
+      feedback.textContent = e.message;
+    } finally {
+      save.disabled = false;
+    }
+  });
+
+  row.appendChild(form);
+}
+
+async function activateAccount(id) {
+  const res = await fetch(`/api/accounts/${id}/activate`, { method: 'PUT' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    alert('Could not switch account: ' + (err.detail || res.status));
+    return;
+  }
+  await fetchAccounts();
+  await reloadActiveAccountView();
+}
+
+async function reloadActiveAccountView() {
+  showOverlay('Loading account...');
+  setStatus('fetching', 'loading');
+  cy.elements().remove();
+  annotationsByNodeId.clear();
+  currentSnapshot = null;
+  viewingHistorical = false;
+  els.snapshotMode.hidden = true;
+  try {
+    await loadAnnotations();
+    const latest = await loadLatest();
+    if (latest.snapshot) {
+      renderGraph(latest.graph);
+      setStatus(latest.snapshot.status, latest.snapshot.status);
+      setCurrentSnapshot(latest.snapshot, false);
+    } else {
+      setStatus('pending', 'no snapshot');
+      els.lastFetched.textContent = 'never fetched';
+    }
+  } catch (e) {
+    console.error(e);
+    setStatus('error', 'load failed');
+  } finally {
+    hideOverlay();
   }
 }
 
-function openSettings(tab = 'token') {
+async function createAccount(body) {
+  const res = await fetch('/api/accounts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  await fetchAccounts();
+  return res.json();
+}
+
+async function updateAccount(id, body) {
+  const res = await fetch(`/api/accounts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  await fetchAccounts();
+  return res.json();
+}
+
+async function deleteAccountConfirm(a) {
+  const typed = prompt(
+    `Type the account name to confirm deletion. This permanently removes ` +
+    `the account, its snapshot history, and all notes.\n\nName: ${a.name}`
+  );
+  if (typed === null) return;
+  if (typed.trim() !== a.name) {
+    alert('Name did not match. Account was not deleted.');
+    return;
+  }
+  const res = await fetch(`/api/accounts/${a.id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    alert('Delete failed: ' + (err.detail || res.status));
+    return;
+  }
+  await fetchAccounts();
+  if (a.is_active) await reloadActiveAccountView();
+}
+
+async function saveNewAccount() {
+  const name = els.newAccountName.value.trim();
+  const token = els.newAccountToken.value.trim();
+  if (!name || !token) {
+    els.newAccountFeedback.className = 'save-status error';
+    els.newAccountFeedback.textContent = 'name and token are required';
+    return;
+  }
+  els.newAccountSave.disabled = true;
+  els.newAccountFeedback.className = 'save-status saving';
+  els.newAccountFeedback.textContent = 'validating...';
+  try {
+    const body = { name, token };
+    const sk = els.newAccountSpacesKey.value.trim();
+    const ss = els.newAccountSpacesSecret.value.trim();
+    const sr = els.newAccountSpacesRegion.value.trim();
+    if (sk) body.spaces_key = sk;
+    if (ss) body.spaces_secret = ss;
+    if (sr) body.spaces_region = sr;
+    await createAccount(body);
+    els.newAccountFeedback.className = 'save-status saved';
+    els.newAccountFeedback.textContent = 'added';
+    els.newAccountName.value = '';
+    els.newAccountToken.value = '';
+    els.newAccountSpacesKey.value = '';
+    els.newAccountSpacesSecret.value = '';
+    els.newAccountSpacesRegion.value = '';
+    setTimeout(() => {
+      els.newAccountFeedback.textContent = '';
+      els.addAccount.open = false;
+    }, 600);
+    if (accountsCache.length === 1) await reloadActiveAccountView();
+  } catch (e) {
+    els.newAccountFeedback.className = 'save-status error';
+    els.newAccountFeedback.textContent = e.message;
+  } finally {
+    els.newAccountSave.disabled = false;
+  }
+}
+
+function openSettings(tab = 'accounts') {
   els.settingsModal.hidden = false;
   activateSettingsTab(tab);
-  els.tokenInput.value = '';
-  els.tokenInput.type = 'password';
-  els.tokenShow.textContent = 'show';
-  els.tokenFeedback.textContent = '';
-  els.tokenFeedback.className = 'save-status';
-  fetchSettings().catch((e) => {
-    els.tokenStatus.className = 'token-status missing';
-    els.tokenStatus.textContent = `Could not check settings: ${e.message}`;
+  if (els.accountsBanner) {
+    els.accountsBanner.hidden = true;
+    els.accountsBanner.textContent = '';
+  }
+  els.newAccountFeedback.textContent = '';
+  els.newAccountFeedback.className = 'save-status';
+  fetchAccounts().catch((e) => {
+    const empty = document.createElement('div');
+    empty.className = 'accounts-empty muted';
+    empty.textContent = `Could not load accounts: ${e.message}`;
+    els.accountsList.replaceChildren(empty);
   });
-  setTimeout(() => els.tokenInput.focus(), 50);
 }
 
 function closeSettings() {
@@ -940,55 +1284,17 @@ function activateSettingsTab(tab) {
   });
 }
 
-async function saveToken() {
-  const token = els.tokenInput.value.trim();
-  if (!token) return;
-  els.tokenSave.disabled = true;
-  els.tokenFeedback.className = 'save-status saving';
-  els.tokenFeedback.textContent = 'validating...';
-  try {
-    const res = await fetch('/api/settings/token', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-      throw new Error(err.detail || `HTTP ${res.status}`);
-    }
-    cachedSettings = await res.json();
-    renderTokenStatus(cachedSettings);
-    els.tokenInput.value = '';
-    els.tokenFeedback.className = 'save-status saved';
-    els.tokenFeedback.textContent = 'saved';
-    setTimeout(() => {
-      closeSettings();
-      els.refresh.click();
-    }, 500);
-  } catch (e) {
-    els.tokenFeedback.className = 'save-status error';
-    els.tokenFeedback.textContent = e.message;
-  } finally {
-    els.tokenSave.disabled = false;
-  }
+function showAccountsBanner(message) {
+  if (!els.accountsBanner) return;
+  els.accountsBanner.hidden = false;
+  els.accountsBanner.textContent = message;
 }
 
-async function clearToken() {
-  if (!confirm('Remove the saved token from this app?')) return;
-  els.tokenClear.disabled = true;
-  try {
-    const res = await fetch('/api/settings/token', { method: 'DELETE' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    cachedSettings = await res.json();
-    renderTokenStatus(cachedSettings);
-    els.tokenFeedback.className = 'save-status';
-    els.tokenFeedback.textContent = 'cleared';
-  } catch (e) {
-    els.tokenFeedback.className = 'save-status error';
-    els.tokenFeedback.textContent = e.message;
-  } finally {
-    els.tokenClear.disabled = false;
-  }
+async function handleNoActiveAccount(message) {
+  setStatus('pending', 'no account');
+  hideOverlay();
+  openSettings('accounts');
+  showAccountsBanner(message || 'No DigitalOcean account is active. Add one or activate an existing account.');
 }
 
 async function loadLatest() {
@@ -999,6 +1305,13 @@ async function loadLatest() {
 
 async function refresh() {
   const res = await fetch('/api/refresh', { method: 'POST' });
+  if (res.status === 409) {
+    const err = await res.json().catch(() => ({}));
+    if (err?.detail?.code === 'no_active_account') {
+      handleNoActiveAccount(err.detail.message);
+      throw new Error('NO_ACTIVE_ACCOUNT');
+    }
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`POST /api/refresh -> ${res.status}: ${text}`);
@@ -1097,15 +1410,16 @@ async function init() {
 
   let settings;
   try {
-    settings = await fetchSettings();
+    settings = await fetchAccounts();
   } catch (e) {
     console.error(e);
-    settings = { token_configured: false };
+    settings = { accounts_count: 0, active_account_id: null };
   }
-  if (!settings.token_configured) {
-    setStatus('pending', 'no token');
+  if (!settings.accounts_count || !settings.active_account_id) {
+    setStatus('pending', 'no account');
     hideOverlay();
-    openSettings();
+    openSettings('accounts');
+    showAccountsBanner('Add a DigitalOcean account to start mapping your infrastructure.');
     return;
   }
 
@@ -1162,7 +1476,7 @@ document.querySelectorAll('.settings-tab').forEach((btn) => {
   btn.addEventListener('click', () => activateSettingsTab(btn.dataset.settingsTab));
 });
 
-els.settingsOpen.addEventListener('click', () => openSettings('token'));
+els.settingsOpen.addEventListener('click', () => openSettings('accounts'));
 els.settingsClose.addEventListener('click', closeSettings);
 els.settingsModal.addEventListener('click', (e) => {
   if (e.target.dataset.closeModal !== undefined) closeSettings();
@@ -1171,17 +1485,31 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (!els.settingsModal.hidden) closeSettings();
     if (!els.historyDrawer.hidden) closeHistory();
+    if (els.accountMenu && !els.accountMenu.hidden) els.accountMenu.hidden = true;
   }
 });
-els.tokenSave.addEventListener('click', saveToken);
-els.tokenClear.addEventListener('click', clearToken);
-els.tokenInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') saveToken();
+
+els.newAccountSave.addEventListener('click', saveNewAccount);
+els.newAccountToken.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') saveNewAccount();
 });
-els.tokenShow.addEventListener('click', () => {
-  const showing = els.tokenInput.type === 'text';
-  els.tokenInput.type = showing ? 'password' : 'text';
-  els.tokenShow.textContent = showing ? 'show' : 'hide';
+els.newAccountName.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') saveNewAccount();
+});
+
+els.accountSwitcher.addEventListener('click', (e) => {
+  e.stopPropagation();
+  els.accountMenu.hidden = !els.accountMenu.hidden;
+});
+document.addEventListener('click', (e) => {
+  if (!els.accountMenu || els.accountMenu.hidden) return;
+  if (!els.accountSwitcherWrap.contains(e.target)) {
+    els.accountMenu.hidden = true;
+  }
+});
+els.accountMenuManage.addEventListener('click', () => {
+  els.accountMenu.hidden = true;
+  openSettings('accounts');
 });
 
 els.search.addEventListener('input', applySearch);
@@ -1224,7 +1552,9 @@ els.refresh.addEventListener('click', async () => {
   } catch (e) {
     console.error(e);
     setStatus('error', 'refresh failed');
-    alert('Refresh failed: ' + e.message);
+    if (e.message !== 'NO_ACTIVE_ACCOUNT') {
+      alert('Refresh failed: ' + e.message);
+    }
   } finally {
     els.refresh.disabled = false;
     hideOverlay();

@@ -1365,3 +1365,308 @@ body.isolation-active main {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Multi-account UI ---------- */
+
+.account-switcher {
+  position: relative;
+}
+
+.account-chip {
+  gap: 6px;
+}
+
+.account-chip-caret {
+  opacity: 0.65;
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 240px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  z-index: 50;
+}
+
+.account-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.account-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.account-menu-item:hover {
+  background: var(--bg-surface-2);
+}
+
+.account-menu-item.active {
+  border-color: var(--border-accent);
+  background: var(--bg-surface-2);
+}
+
+.account-menu-item-name {
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.account-menu-item-meta {
+  font-size: 11px;
+}
+
+.account-menu-manage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.account-menu-manage:hover {
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+}
+
+.accounts-banner {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.accounts-empty {
+  padding: 14px;
+  border: 1px dashed var(--border-default);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.account-row {
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--bg-surface-1);
+}
+
+.account-row.active {
+  border-color: var(--border-accent);
+  background: var(--bg-surface-2);
+}
+
+.account-row-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.account-row-name {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.account-row-active-badge {
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--accent-green);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.account-row-meta {
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-surface-2);
+}
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.icon-btn:hover {
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+}
+
+.icon-btn.danger:hover {
+  background: var(--accent-red-bg);
+  color: var(--accent-red);
+  border-color: var(--accent-red-border);
+}
+
+.icon-btn .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.account-row-edit {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-default);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-account {
+  border: 1px dashed var(--border-default);
+  border-radius: 10px;
+  padding: 4px 12px;
+}
+
+.add-account[open] {
+  padding: 12px;
+  background: var(--bg-surface-1);
+}
+
+.add-account > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 8px 0;
+}
+
+.add-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.add-account-spaces {
+  border: 1px dashed var(--border-default);
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+.add-account-spaces[open] {
+  padding: 10px;
+}
+
+.add-account-spaces > summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.add-account-spaces > * + * {
+  margin-top: 8px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+}
+
+.form-label {
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.form-row input {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text-primary);
+}
+
+.form-row input:focus {
+  outline: none;
+  border-color: var(--border-accent);
+}

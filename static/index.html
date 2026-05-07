@@ -61,6 +61,20 @@
     </label>
 
     <div class="command-cluster">
+      <div id="account-switcher-wrap" class="account-switcher" hidden>
+        <button id="account-switcher" class="icon-command account-chip" type="button" title="Switch DigitalOcean account">
+          <span data-icon="users"></span>
+          <span id="account-switcher-name">Account</span>
+          <span data-icon="chevron-down" class="account-chip-caret"></span>
+        </button>
+        <div id="account-menu" class="account-menu" hidden role="menu">
+          <div id="account-menu-list" class="account-menu-list"></div>
+          <button id="account-menu-manage" type="button" class="account-menu-manage">
+            <span data-icon="settings"></span>
+            <span>Manage accounts...</span>
+          </button>
+        </div>
+      </div>
       <button id="history-open" class="icon-command" type="button" title="Snapshot history">
         <span data-icon="history"></span>
         <span>History</span>
@@ -178,9 +192,9 @@
     </div>
 
     <div class="settings-tabs" role="tablist">
-      <button class="settings-tab active" type="button" data-settings-tab="token">
-        <span data-icon="key"></span>
-        <span>API token</span>
+      <button class="settings-tab active" type="button" data-settings-tab="accounts">
+        <span data-icon="users"></span>
+        <span>Accounts</span>
       </button>
       <button class="settings-tab" type="button" data-settings-tab="appearance">
         <span data-icon="palette"></span>
@@ -193,31 +207,52 @@
     </div>
 
     <div class="modal-body">
-      <section class="settings-panel" data-settings-panel="token">
-        <h3>DigitalOcean API token</h3>
+      <section class="settings-panel" data-settings-panel="accounts">
+        <h3>DigitalOcean accounts</h3>
         <p class="modal-help">
-          The token is stored locally in <code>data/topology.db</code> on this machine.
-          It is only used by this app to query the DigitalOcean API. Read scope is sufficient.
+          Each account stores its own API token, snapshot history, and notes locally
+          in <code>data/topology.db</code>. Switch between them anytime — only one
+          is active at a time. Read scope on the token is sufficient.
           <a href="https://cloud.digitalocean.com/account/api/tokens" target="_blank" rel="noopener">
             Generate a token
           </a>
         </p>
-        <div id="token-status" class="token-status muted">Checking...</div>
-        <div class="token-input-row">
-          <input
-            id="token-input"
-            type="password"
-            placeholder="dop_v1_..."
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button id="token-show" type="button" class="token-show" title="Show / hide">show</button>
+        <div id="accounts-banner" class="accounts-banner" hidden></div>
+        <div id="accounts-list" class="accounts-list">
+          <div class="accounts-empty muted">Loading...</div>
         </div>
-        <div class="modal-actions">
-          <button id="token-save" type="button" class="btn-primary">Save &amp; test</button>
-          <button id="token-clear" type="button" class="btn-danger" hidden>Clear stored token</button>
-          <span id="token-feedback" class="save-status"></span>
-        </div>
+        <details id="add-account" class="add-account">
+          <summary><span data-icon="plus"></span><span>Add account</span></summary>
+          <div class="add-account-form">
+            <label class="form-row">
+              <span class="form-label">Name</span>
+              <input id="new-account-name" type="text" placeholder="Personal, work, prod" maxlength="200" autocomplete="off" />
+            </label>
+            <label class="form-row">
+              <span class="form-label">API token</span>
+              <input id="new-account-token" type="password" placeholder="dop_v1_..." maxlength="200" autocomplete="off" spellcheck="false" />
+            </label>
+            <details class="add-account-spaces">
+              <summary>Optional: Spaces credentials</summary>
+              <label class="form-row">
+                <span class="form-label">Spaces key</span>
+                <input id="new-account-spaces-key" type="text" autocomplete="off" />
+              </label>
+              <label class="form-row">
+                <span class="form-label">Spaces secret</span>
+                <input id="new-account-spaces-secret" type="password" autocomplete="off" />
+              </label>
+              <label class="form-row">
+                <span class="form-label">Spaces region</span>
+                <input id="new-account-spaces-region" type="text" placeholder="nyc3" />
+              </label>
+            </details>
+            <div class="modal-actions">
+              <button id="new-account-save" type="button" class="btn-primary">Add &amp; validate</button>
+              <span id="new-account-feedback" class="save-status"></span>
+            </div>
+          </div>
+        </details>
       </section>
 
       <section class="settings-panel" data-settings-panel="appearance" hidden>
